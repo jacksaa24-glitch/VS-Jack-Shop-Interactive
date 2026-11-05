@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TextureAtlas imagePath="placeholder.png">
+	<!-- Created with Adobe Animate version 23.0.2.103 -->
+	<!-- http://www.adobe.com/products/animate.html -->
+	<SubTexture name="placeholder0000" x="0" y="0" width="515" height="484"/>
+	<SubTexture name="placeholder0001" x="0" y="0" width="515" height="484"/>
+	<SubTexture name="placeholder0002" x="0" y="0" width="515" height="484"/>
+	<SubTexture name="placeholder0003" x="0" y="0" width="515" height="484"/>
+	<SubTexture name="placeholder0004" x="0" y="484" width="515" height="484"/>
+	<SubTexture name="placeholder0005" x="0" y="484" width="515" height="484"/>
+	<SubTexture name="placeholder0006" x="0" y="484" width="515" height="484"/>
+	<SubTexture name="placeholder0007" x="0" y="484" width="515" height="484"/>
+</TextureAtlas>

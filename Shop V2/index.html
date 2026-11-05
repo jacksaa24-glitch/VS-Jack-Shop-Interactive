@@ -1,0 +1,1329 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Alowi Shop - FNF Mod</title>
+
+  <!-- FUENTE RETRO ESTILO UNDERTALE / DELTARUNE -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=VT323&family=Press+Start+2P&display=swap" rel="stylesheet">
+
+  <style>
+    /* 1. Bloqueo total de scroll y FONDO NÍTIDO */
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100vh;
+      overflow: hidden;
+      background-color: #0a0a0a;
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: 'VT323', monospace;
+      transition: background-image 0.5s ease;
+    }
+
+    /* --- PANTALLA DE CARGA --- */
+    #pantalla-carga {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-color: #050505;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      color: #fff;
+      transition: opacity 1.3s ease;
+      font-family: 'Press Start 2P', monospace;
+    }
+
+    .loader-texto {
+      font-size: 16px;
+      letter-spacing: 2px;
+      margin-bottom: 20px;
+      color: #38ef7d;
+      text-transform: uppercase;
+    }
+
+    .barras-contenedor {
+      width: 280px;
+      height: 12px;
+      background-color: #222;
+      border-radius: 6px;
+      overflow: hidden;
+      border: 2px solid #333;
+    }
+
+    .barra-progreso {
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, #11998e, #38ef7d);
+      transition: width 0.1s linear;
+    }
+
+    /* 2. Contenedor principal de la tienda */
+    .tienda-canvas {
+      position: relative;
+      width: 95vw;
+      height: 90vh;
+      max-width: 1100px;
+      max-height: 650px;
+      overflow: hidden;
+      background-color: #000;
+      border: 4px solid #ffffff;
+      box-shadow: 0 0 35px rgba(0, 0, 0, 0.95);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      z-index: 1;
+    }
+
+    .capa {
+      position: absolute;
+    }
+
+    /* --- CAPA 1: FONDO --- */
+    .fondo {
+      top: 50%;
+      left: 50%;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transform: translate(-50%, -50%) scale(1.12);
+      z-index: 1;
+    }
+
+    /* --- CAPA 2: ALOWI --- */
+    .alowi-contenedor {
+      position: absolute;
+      bottom: 20px;
+      right: -45px;
+      width: 380px;
+      height: 480px;
+      z-index: 4;
+      pointer-events: none;
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+    }
+
+    #alowi-sprite {
+      image-rendering: pixelated;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* --- CAPA 3: MOSTRADOR Y TV --- */
+    .mostrador {
+      bottom: -50px;
+      right: -10px;
+      width: 650px;
+      z-index: 5;
+    }
+
+    .tv-contenedor {
+      position: absolute;
+      bottom: 155px;
+      right: 400px;
+      width: 170px;
+      height: 170px;
+      background-color: transparent;
+      z-index: 6;
+    }
+
+    .tv-marco {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    .tv-pantalla-gif {
+      position: absolute;
+      top: 12px;
+      left: 15px;
+      width: 138px;
+      height: 84px;
+      object-fit: cover;
+      border-radius: 4px;
+      z-index: 1;
+      image-rendering: pixelated;
+    }
+
+    /* --- FLOWERY DESDE EL TECHO (A la altura del menú de Comprar) --- */
+    #elemento-techo-extra {
+      position: absolute;
+      top: 0px;
+      left: 570px;
+      width: auto;
+      height: 240px; /* Altura extendida para que llegue a la altura del menú */
+      z-index: 7;
+      image-rendering: pixelated;
+      transform: translateY(-100%);
+      transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      pointer-events: none;
+    }
+
+    #elemento-techo-extra.activo {
+      transform: translateY(0%);
+    }
+
+    /* --- TENNA EN LA MESA DE ALOWI --- */
+    #tenna-mesa-extra {
+      position: absolute;
+      bottom: 180px;
+      right: 230px;
+      width: 110px;
+      height: 130px;
+      z-index: 8;
+      image-rendering: pixelated;
+      transform: scale(0);
+      opacity: 0;
+      transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease;
+      pointer-events: none;
+    }
+
+    #tenna-mesa-extra.activo {
+      transform: scale(1);
+      opacity: 1;
+    }
+
+    /* --- CAJA DE DIÁLOGO DELTARUNE (INFERIOR) --- */
+    #deltarune-box {
+      position: absolute;
+      bottom: 25px;
+      left: 510px;
+      width: 560px;
+      height: 110px;
+      background-image: url('images/deltarune_box.png');
+      background-size: 100% 100%;
+      z-index: 40;
+      display: none;
+      box-sizing: border-box;
+      padding: 20px 28px;
+    }
+
+    #deltarune-texto {
+      color: #ffffff;
+      font-family: 'VT323', monospace;
+      font-size: 24px;
+      line-height: 1.3;
+      letter-spacing: 1px;
+    }
+
+    /* --- MENÚ DE ACCIONES PRINCIPAL CON TRANSICIÓN --- */
+    #menu-tienda {
+      position: absolute;
+      top: 55px;
+      right: 320px;
+      width: 200px;
+      background: rgba(0, 0, 0, 0.9);
+      border: 3px solid #ffffff;
+      padding: 12px 15px;
+      z-index: 20;
+      box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
+      
+      opacity: 0;
+      transform: scale(0.8) translateY(-20px);
+      transition: opacity 0.3s cubic-bezier(0.25, 1, 0.5, 1), transform 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+      pointer-events: none;
+    }
+
+    #menu-tienda.visible {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+      pointer-events: auto;
+    }
+
+    .menu-opcion {
+      color: #ffffff;
+      font-family: 'Press Start 2P', monospace;
+      font-size: 13px;
+      padding: 8px 6px;
+      margin-bottom: 4px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .menu-opcion.seleccionado {
+      color: #ffff00;
+    }
+
+    .menu-opcion.seleccionado::before {
+      content: '▶';
+      font-size: 10px;
+    }
+
+    /* --- LAYER DE TRANSICIÓN --- */
+    #tienda-compra-container {
+      position: absolute;
+      top: 0px;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      z-index: 25;
+      transition: left 1.4s ease-in-out;
+      pointer-events: none;
+    }
+
+    #tienda-compra-container.activo {
+      left: 0px;
+    }
+
+    #tienda-layer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image: url('images/sprites/layer.png');
+      background-size: contain;
+      background-position: left center;
+      background-repeat: no-repeat;
+      z-index: 1;
+    }
+
+    .saacs-recorte-box {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 460px;
+      height: 100%;
+      overflow: hidden;
+      z-index: 2;
+      pointer-events: none;
+
+      -webkit-mask-image: url('images/sprites/layer.png');
+      mask-image: url('images/sprites/layer.png');
+      -webkit-mask-size: contain;
+      mask-size: contain;
+      -webkit-mask-position: left center;
+      mask-position: left center;
+      -webkit-mask-repeat: no-repeat;
+      mask-repeat: no-repeat;
+    }
+
+    #layer-particulas-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    /* --- CINTA DE PLACEHOLDERS --- */
+    .cinta-contenedor {
+      position: absolute;
+      top: 60px;
+      left: 60px;
+      width: 320px;
+      height: 550px;
+      overflow: hidden;
+      z-index: 30;
+      transform: translateY(-120%);
+      opacity: 0;
+      transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.4s ease;
+    }
+
+    .cinta-contenedor.visible {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    .cinta-contenedor.salir-abajo {
+      transform: translateY(120%);
+      opacity: 0;
+    }
+
+    .cinta-track {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 40px;
+      transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+    }
+
+    .item-card {
+      width: 280px;
+      height: 380px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      opacity: 0.5;
+      transform: scale(0.55);
+      transition: opacity 0.4s ease, transform 0.4s ease, filter 0.3s ease;
+    }
+
+    @keyframes pulsar-seleccion {
+      0% { filter: drop-shadow(0 0 6px rgba(255, 255, 0, 0.6)) brightness(1); }
+      50% { filter: drop-shadow(0 0 20px rgba(255, 255, 0, 1)) brightness(1.25); }
+      100% { filter: drop-shadow(0 0 6px rgba(255, 255, 0, 0.6)) brightness(1); }
+    }
+
+    .item-card.activo {
+      opacity: 1;
+      transform: scale(1);
+      animation: pulsar-seleccion 1.6s infinite ease-in-out;
+    }
+
+    .item-canvas-sprite {
+      image-rendering: pixelated;
+      width: 240px;
+      height: 320px;
+    }
+
+    .item-info-tag {
+      color: #ffff00;
+      font-family: 'Press Start 2P', monospace;
+      font-size: 13px;
+      text-align: center;
+      margin-top: 14px;
+      text-shadow: 2px 2px 4px #000, 0 0 10px rgba(255, 255, 0, 0.8);
+      letter-spacing: 1px;
+    }
+
+    /* --- CUADRO DE CONFIRMACIÓN DE COMPRA --- */
+    #confirmar-box {
+      position: absolute;
+      bottom: -150px;
+      left: 510px;
+      width: 560px;
+      height: 110px;
+      background: rgba(0, 0, 0, 0.9);
+      border: 3px solid #ffffff;
+      z-index: 50;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      box-sizing: border-box;
+      padding: 10px;
+      transition: bottom 0.3s ease-in-out;
+      font-family: 'Press Start 2P', monospace;
+    }
+
+    #confirmar-box.activo {
+      bottom: 25px;
+    }
+
+    .confirmar-titulo {
+      color: #ffffff;
+      font-size: 14px;
+      margin-bottom: 15px;
+      letter-spacing: 1px;
+    }
+
+    .confirmar-opciones {
+      display: flex;
+      gap: 50px;
+    }
+
+    .conf-opcion {
+      color: #ffffff;
+      font-size: 14px;
+      padding: 4px 15px;
+      cursor: pointer;
+    }
+
+    .conf-opcion.seleccionado {
+      color: #ffff00;
+    }
+
+    .conf-opcion.seleccionado::before {
+      content: '▶ ';
+    }
+  </style>
+</head>
+<body>
+
+  <!-- PANTALLA DE CARGA -->
+  <div id="pantalla-carga">
+    <div class="loader-texto">Cargando</div>
+    <div class="barras-contenedor">
+      <div class="barra-progreso" id="barra-progreso"></div>
+    </div>
+  </div>
+
+  <!-- ESCENARIO PRINCIPAL -->
+  <div class="tienda-canvas" id="tienda-canvas">
+    <img src="images/sprites/background.png" class="capa fondo" alt="Fondo">
+
+    <div class="alowi-contenedor">
+      <canvas id="alowi-sprite" width="380" height="480"></canvas>
+    </div>
+
+    <img src="images/sprites/alowi_shop.png" class="capa mostrador" alt="Mostrador">
+
+    <!-- TV CON GIFS LIMPIOS (Modric, Ralsei, Navidad) -->
+    <div class="tv-contenedor">
+      <img src="images/sprites/video_reproductor.png" class="tv-marco" alt="TV Marco">
+      <img id="tv-pantalla-gif" class="tv-pantalla-gif" src="gifs/dvd_bouncing.gif" alt="Pantalla TV">
+    </div>
+
+    <!-- FLOWERY DESDE EL TECHO (A la altura del menú) -->
+    <img id="elemento-techo-extra" src="gifs/flowery.gif" alt="Flowery Techo">
+
+    <!-- TENNA BAILANDO / EXPLOTANDO EN LA MESA -->
+    <img id="tenna-mesa-extra" src="gifs/tenna_dancing.gif" alt="Tenna Mesa">
+
+    <!-- CAJA DE DIÁLOGO DELTARUNE -->
+    <div id="deltarune-box">
+      <div id="deltarune-texto"></div>
+    </div>
+
+    <!-- MENÚ DE OPCIONES PRINCIPAL -->
+    <div id="menu-tienda">
+      <div class="menu-opcion seleccionado" data-index="0">Comprar</div>
+      <div class="menu-opcion" data-index="1">Hablar</div>
+      <div class="menu-opcion" data-index="2">Retirarse</div>
+    </div>
+
+    <!-- LAYER CON ISAACS -->
+    <div id="tienda-compra-container">
+      <div id="tienda-layer"></div>
+      <div class="saacs-recorte-box">
+        <canvas id="layer-particulas-canvas" width="460" height="650"></canvas>
+      </div>
+    </div>
+
+    <div class="cinta-contenedor" id="cinta-box">
+      <div class="cinta-track" id="cinta-track"></div>
+    </div>
+
+    <!-- VENTANA DE CONFIRMACIÓN DE COMPRA -->
+    <div id="confirmar-box">
+      <div class="confirmar-titulo">¿Comprar este objeto?</div>
+      <div class="confirmar-opciones">
+        <div class="conf-opcion seleccionado" id="conf-si">Sí</div>
+        <div class="conf-opcion" id="conf-no">No</div>
+      </div>
+    </div>
+
+    <!-- AUDIO -->
+    <audio id="voz-alowi" src="sonidos/1.wav"></audio>
+    <audio id="musica-tienda"></audio>
+    <audio id="audio-especial-tv"></audio>
+    <audio id="audio-tenna"></audio>
+  </div>
+
+  <script>
+    /* ==========================================================================
+       FONDO DE PANTALLA EXTERIOR NÍTIDO
+       ========================================================================== */
+    const fondosExteriores = [
+      'images/Hananene.png',
+      'images/Ninjago.png',
+      'images/Undertale.png'
+    ];
+    document.body.style.backgroundImage = `url('${fondosExteriores[Math.floor(Math.random() * fondosExteriores.length)]}')`;
+
+    /* ==========================================================================
+       SISTEMA DE TV (Solo los gifs limpios requeridos)
+       ========================================================================== */
+    const listaGifsTv = [
+      'gifs/modric.gif',
+      'gifs/modric2.gif',
+      'gifs/modric3.gif',
+      'gifs/ralsei.gif',
+      'gifs/feliznavidad.gif'
+    ];
+
+    let rotacionTvActiva = false;
+    let tvIntervalId = null;
+    const audioEspecialTv = document.getElementById('audio-especial-tv');
+
+    function iniciarRotacionTv() {
+      if (rotacionTvActiva) return;
+      rotacionTvActiva = true;
+
+      tvIntervalId = setInterval(() => {
+        const tvImg = document.getElementById('tv-pantalla-gif');
+        if (!tvImg) return;
+
+        const gifAleatorio = listaGifsTv[Math.floor(Math.random() * listaGifsTv.length)];
+        tvImg.src = gifAleatorio;
+
+        if (gifAleatorio.includes('feliznavidad.gif')) {
+          audioEspecialTv.src = 'sonidos/feliz_navidad.mp3';
+          audioEspecialTv.currentTime = 0;
+          audioEspecialTv.play().catch(() => {});
+        } else {
+          audioEspecialTv.pause();
+          audioEspecialTv.currentTime = 0;
+        }
+      }, 10000);
+    }
+
+    /* ==========================================================================
+       EVENTO TENNA EN LA MESA (Baila con sonido -> Explota a los 10s)
+       ========================================================================== */
+    function dispararTennaMesa() {
+      const tennaImg = document.getElementById('tenna-mesa-extra');
+      const audioTenna = document.getElementById('audio-tenna');
+      if (!tennaImg) return;
+
+      tennaImg.src = 'gifs/tenna_dancing.gif';
+      tennaImg.classList.add('activo');
+
+      audioTenna.src = 'sonidos/tenna.mp3';
+      audioTenna.currentTime = 0;
+      audioTenna.play().catch(() => {});
+
+      // A los 10 segundos explota en la mesa
+      setTimeout(() => {
+        tennaImg.src = 'gifs/explosion.gif';
+        audioTenna.pause();
+        audioTenna.currentTime = 0;
+
+        const audioExplosion = new Audio('sonidos/delta_rune_explosion.mp3');
+        audioExplosion.volume = 0.7;
+        audioExplosion.play().catch(() => {});
+
+        // Ocultar la explosión después de 2 segundos
+        setTimeout(() => {
+          tennaImg.classList.remove('activo');
+        }, 2000);
+
+      }, 10000);
+    }
+
+    /* ==========================================================================
+       EVENTO DESDE EL TECHO (Flowery: 30s después de iniciar música, colgado 50s)
+       ========================================================================== */
+    function dispararColgadoTecho() {
+      const elementoTecho = document.getElementById('elemento-techo-extra');
+      if (!elementoTecho) return;
+
+      elementoTecho.classList.add('activo');
+
+      const sfxVerity = new Audio('sonidos/its_me_verity.mp3');
+      sfxVerity.volume = 0.6;
+      sfxVerity.play().catch(() => {});
+
+      setTimeout(() => {
+        elementoTecho.classList.remove('activo');
+      }, 50000);
+    }
+
+    /* ==========================================================================
+       LISTA Y REPRODUCCIÓN CÍCLICA CONSECUTIVA DE CANCIONES
+       ========================================================================== */
+    const listaCanciones = [
+      'sonidos/kris_piano_shop.ogg',
+      'sonidos/cyber_shop.ogg',
+      'sonidos/hip_shop.ogg',
+      'sonidos/shop_3.ogg',
+      'sonidos/shop1.ogg'
+    ];
+
+    let indiceCancionActual = Math.floor(Math.random() * listaCanciones.length);
+    const reproductorMusica = document.getElementById('musica-tienda');
+    reproductorMusica.src = listaCanciones[indiceCancionActual];
+
+    let eventosIniciados = false;
+
+    reproductorMusica.addEventListener('play', () => {
+      iniciarRotacionTv();
+
+      if (!eventosIniciados) {
+        eventosIniciados = true;
+        
+        // Flowery aparece a los 30s
+        setTimeout(() => {
+          dispararColgadoTecho();
+          setInterval(dispararColgadoTecho, 90000);
+        }, 30000);
+
+        // Tenna aparece en la mesa a los 15s por primera vez y luego se repite
+        setTimeout(() => {
+          dispararTennaMesa();
+          setInterval(dispararTennaMesa, 70000);
+        }, 15000);
+      }
+    });
+
+    reproductorMusica.addEventListener('ended', () => {
+      indiceCancionActual = (indiceCancionActual + 1) % listaCanciones.length;
+      reproductorMusica.src = listaCanciones[indiceCancionActual];
+      reproductorMusica.volume = 0.5;
+      reproductorMusica.play().catch(() => {});
+    });
+
+    /* ==========================================================================
+       EFECTOS DE SONIDO (SFX) DE INTERACCIÓN
+       ========================================================================== */
+    const sfxMove = new Audio('sonidos/undertale_move.mp3');
+    const sfxSelect = new Audio('sonidos/undertale_select.mp3');
+    const sfxUndoSelect = new Audio('sonidos/undertale_undoselect.mp3');
+    const sfxBuyComplete = new Audio('sonidos/undertale_buycomplete.mp3');
+
+    function reproducirSFX(audioObj) {
+      if (!audioObj) return;
+      audioObj.currentTime = 0;
+      audioObj.play().catch(() => {});
+    }
+
+    /* ==========================================================================
+       CONFIGURACIÓN DE ÍTEMS Y DIÁLOGOS
+       ========================================================================== */
+    const itemsTienda = [
+      {
+        nombre: "Last Chance",
+        precio: "$399",
+        descripcion: "Tienes que tener en cuenta algo, esto lo encontre tirado por ahi, se ve que tiene algo sospechoso",
+        animDescripcion: "anim_3",
+        dialogoExito: "Gracias!, espero que ese cartucho no te muerda :p",
+        animExito: "anim_1"
+      },
+      {
+        nombre: "Meme Rumble",
+        precio: "$250",
+        descripcion: "Es, una invitacion a una fiesta, nose de que sea la verdad se oye divertido",
+        animDescripcion: "anim_2",
+        dialogoExito: "espero que haya pastel yummy yummy",
+        animExito: "anim_1"
+      },
+      {
+        nombre: "Contravection",
+        precio: "$800",
+        descripcion: "Es un vuelo a....Nevada?, que hay ahi?",
+        animDescripcion: "anim_4",
+        dialogoExito: "Solo ten cuidado de que no te roben el alma xd",
+        animExito: "anim_2"
+      }
+    ];
+
+    /* ==========================================================================
+       VARIABLES Y ELEMENTOS
+       ========================================================================== */
+    const canvas = document.getElementById('alowi-sprite');
+    const ctx = canvas.getContext('2d');
+    const particulasCanvas = document.getElementById('layer-particulas-canvas');
+    const particulasCtx = particulasCanvas.getContext('2d');
+
+    const pantallaCarga = document.getElementById('pantalla-carga');
+    const barraProgreso = document.getElementById('barra-progreso');
+    const tiendaCanvas = document.getElementById('tienda-canvas');
+
+    const assets = [
+      'images/sprites/background.png',
+      'images/sprites/alowi_shop.png',
+      'images/sprites/video_reproductor.png',
+      'images/sprites/entrance_anim.png',
+      'images/sprites/alowi_anims.png',
+      'gifs/dvd_bouncing.gif',
+      'gifs/flowery.gif',
+      'gifs/tenna_dancing.gif',
+      'gifs/explosion.gif',
+      'images/deltarune_box.png',
+      'images/sprites/layer.png',
+      'images/sprites/placeholder.png',
+      'images/the_saac.png',
+      'images/Hananene.png',
+      'images/Ninjago.png',
+      'images/Undertale.png'
+    ];
+
+    const saacImg = new Image();
+    saacImg.src = 'images/the_saac.png';
+
+    const animConfig = {
+      entrance:        { offsetX: 0, offsetY: 0 },
+      anim_1:          { offsetX: 60, offsetY: 0 },
+      anim_2:          { offsetX: 60, offsetY: 0 },
+      anim_3:          { offsetX: 60, offsetY: 0 },
+      anim_4:          { offsetX: 60, offsetY: 0 },
+      anim_5:          { offsetX: 60, offsetY: 0 },
+      anim_6:          { offsetX: 60, offsetY: 0 },
+      idle:            { offsetX: 60, offsetY: 0 },
+      "nonest-anim_1": { offsetX: 60, offsetY: 0 },
+      "nonest-anim_2": { offsetX: 60, offsetY: 0 },
+      "nonest-anim_3": { offsetX: 60, offsetY: 0 },
+      "nonest-anim_4": { offsetX: 60, offsetY: 0 }
+    };
+
+    const entranceFrames = [
+      {x:0,y:0,w:559,h:742,fx:0,fy:-69}, {x:559,y:0,w:552,h:750,fx:-18,fy:-60},
+      {x:1111,y:0,w:546,h:767,fx:-36,fy:-43}, {x:1657,y:0,w:561,h:772,fx:-34,fy:-38},
+      {x:2218,y:0,w:574,h:782,fx:-32,fy:-28}, {x:2792,y:0,w:562,h:773,fx:-32,fy:-37},
+      {x:3354,y:0,w:561,h:772,fx:-34,fy:-38}, {x:0,y:782,w:560,h:763,fx:-23,fy:-48},
+      {x:560,y:782,w:560,h:753,fx:-11,fy:-58}, {x:1120,y:782,w:559,h:742,fx:0,fy:-69},
+      {x:1679,y:782,w:561,h:772,fx:-34,fy:-38}, {x:2240,y:782,w:574,h:782,fx:-32,fy:-28},
+      {x:2814,y:782,w:562,h:773,fx:-32,fy:-37}, {x:3376,y:782,w:555,h:761,fx:-28,fy:-49},
+      {x:0,y:1564,w:541,h:783,fx:-34,fy:-27}, {x:541,y:1564,w:525,h:810,fx:-60,fy:0},
+      {x:1066,y:1564,w:556,h:770,fx:-102,fy:-38}, {x:1622,y:1564,w:556,h:781,fx:-104,fy:-27},
+      {x:2178,y:1564,w:549,h:800,fx:-108,fy:-12}, {x:2727,y:1564,w:539,h:804,fx:-116,fy:-8},
+      {x:3266,y:1564,w:536,h:802,fx:-120,fy:-10}, {x:0,y:2374,w:535,h:805,fx:-130,fy:-7},
+      {x:535,y:2374,w:531,h:805,fx:-146,fy:-7}
+    ];
+
+    const animacionesMap = {
+      anim_1: [{x: 0, y: 0, w: 531, h: 805, fx: -6, fy: 0}, {x: 531, y: 0, w: 533, h: 797, fx: 0, fy: -9}],
+      anim_2: [{x: 1064, y: 0, w: 531, h: 809, fx: -2, fy: 0}, {x: 1595, y: 0, w: 533, h: 797, fx: 0, fy: -12}],
+      anim_3: [{x: 2128, y: 0, w: 534, h: 813, fx: 0, fy: 0}, {x: 2662, y: 0, w: 531, h: 805, fx: -14, fy: -9}],
+      anim_4: [{x: 3193, y: 0, w: 534, h: 813, fx: 0, fy: 0}, {x: 3727, y: 0, w: 531, h: 805, fx: -14, fy: -8}],
+      anim_5: [{x: 4258, y: 0, w: 538, h: 813, fx: 0, fy: 0}, {x: 4796, y: 0, w: 531, h: 805, fx: -3, fy: -8}],
+      anim_6: [
+        {x:5327,y:0,w:531,h:925,fx:0,fy:0},{x:5858,y:0,w:531,h:921,fx:0,fy:0},{x:6389,y:0,w:531,h:917,fx:0,fy:0},
+        {x:6920,y:0,w:531,h:913,fx:0,fy:0},{x:7451,y:0,w:531,h:909,fx:0,fy:0},{x:0,y:925,w:531,h:905,fx:0,fy:0},
+        {x:531,y:925,w:531,h:901,fx:0,fy:0},{x:1062,y:925,w:531,h:897,fx:0,fy:0},{x:1593,y:925,w:531,h:893,fx:0,fy:0}
+      ],
+      idle: [
+        {x:1593,y:3480,w:536,h:805,fx:-7,fy:-4},{x:2129,y:3480,w:543,h:808,fx:0,fy:-1},
+        {x:2672,y:3480,w:535,h:789,fx:-4,fy:-19},{x:3207,y:3480,w:535,h:794,fx:-10,fy:-15}
+      ],
+      "nonest-anim_1": [{x: 5337, y: 3480, w: 536, h: 818, fx: 0, fy: 0}],
+      "nonest-anim_2": [{x: 5873, y: 3480, w: 533, h: 797, fx: 0, fy: 0}],
+      "nonest-anim_3": [{x: 6406, y: 3480, w: 531, h: 805, fx: 0, fy: 0}],
+      "nonest-anim_4": [{x: 6937, y: 3480, w: 547, h: 828, fx: 0, fy: 0}]
+    };
+
+    const placeholderFrames = [
+      {x: 0, y: 0, w: 515, h: 484},
+      {x: 0, y: 0, w: 515, h: 484},
+      {x: 0, y: 0, w: 515, h: 484},
+      {x: 0, y: 0, w: 515, h: 484},
+      {x: 0, y: 484, w: 515, h: 484},
+      {x: 0, y: 484, w: 515, h: 484},
+      {x: 0, y: 484, w: 515, h: 484},
+      {x: 0, y: 484, w: 515, h: 484}
+    ];
+    let placeholderFrameIndex = 0;
+
+    const dialogosSecuencia = [
+      { texto: "¡HOLA! HOLAAAAA!!, que gusto verte aqui! :D.", anim: "anim_4" },
+      { texto: "Sabes, eres la primera persona que entra de lo que va del mes, xd", anim: "anim_5" },
+      { texto: "Usualmente casi nadie viene porque lo que vendo es...", anim: "anim_3" },
+      { texto: "cosas de ALT?", anim: "anim_2" },
+      { texto: "...", anim: "nonest-anim_2" },
+      { texto: "No enserio, quien dijo esa mamadota?", anim: "anim_2" },
+      { texto: "malditozzzzzzzzzzzz los odio a todos esos tipos zzzzz", anim: "anim_6" },
+      { texto: "En fin", anim: "nonest-anim_1" },
+      { texto: "Vinistes a comprar, no?", anim: "anim_1" },
+      { texto: "Pues entonces sientete libre de ver lo que quieras! :D", anim: "anim_4" },
+      { texto: "aunque eso si", anim: "anim_3" },
+      { texto: "tengo cosas que no se de donde vienen", anim: "anim_5" },
+      { texto: "neeeeeeeeeeeeeeeeh, a quien le importa", anim: "nonest-anim_1" },
+      { texto: "Divierteteeee!", anim: "anim_4" }
+    ];
+
+    let indiceDialogo = 0;
+    let estadoFase = 'ENTRADA';
+    let animActualKey = 'anim_4';
+    let currentFrameIndex = 0;
+    let scale = 0.44;
+    let lastTime = 0;
+    let idleTimer = 0;
+    const fps = 12;
+    const interval = 1000 / fps;
+
+    let estaEscribiendo = false;
+    let timeoutTipeo = null;
+    let textoActualCompleto = "";
+    let opcionSeleccionadaIndex = 0;
+    let itemIndexActual = 0;
+    let confOpcionIndex = 0;
+
+    /* --- GENERACIÓN DE ISAACS --- */
+    function crearNuevoSaac() {
+      return {
+        x: Math.random() * 420 + 10,
+        y: Math.random() * 550 + 50,
+        ancho: 68,
+        alto: 68,
+        vy: -(Math.random() * 0.95 + 0.45),
+        vx: (Math.random() - 0.5) * 0.4,
+        scale: 0,
+        maxScale: Math.random() * 0.4 + 0.85,
+        zoomSpeed: 0.05,
+        rotacion: (Math.random() - 0.5) * 0.5,
+        rotSpeed: (Math.random() - 0.5) * 0.025
+      };
+    }
+
+    const listaSaacs = [];
+    for (let s = 0; s < 18; s++) {
+      const saacObj = crearNuevoSaac();
+      saacObj.scale = saacObj.maxScale;
+      listaSaacs.push(saacObj);
+    }
+
+    function renderizarSaacsLayer() {
+      particulasCtx.clearRect(0, 0, particulasCanvas.width, particulasCanvas.height);
+
+      if (!saacImg.complete) return;
+
+      listaSaacs.forEach((s, idx) => {
+        if (s.scale < s.maxScale) {
+          s.scale += s.zoomSpeed;
+          if (s.scale > s.maxScale) s.scale = s.maxScale;
+        }
+
+        s.y += s.vy;
+        s.x += s.vx;
+        s.rotacion += s.rotSpeed;
+
+        if (s.y < -70 || s.x < -30 || s.x > 450) {
+          listaSaacs[idx] = crearNuevoSaac();
+          listaSaacs[idx].y = 630;
+        }
+
+        particulasCtx.save();
+        particulasCtx.translate(s.x + s.ancho / 2, s.y + s.alto / 2);
+        particulasCtx.rotate(s.rotacion);
+        particulasCtx.scale(s.scale, s.scale);
+        particulasCtx.drawImage(saacImg, -s.ancho / 2, -s.alto / 2, s.ancho, s.alto);
+        particulasCtx.restore();
+      });
+    }
+
+    let loadedCount = 0;
+    const entranceImg = new Image();
+    const animsImg = new Image();
+    const placeholderImg = new Image();
+
+    assets.forEach((src) => {
+      const img = new Image();
+      img.src = src;
+      img.onload = () => {
+        loadedCount++;
+        barraProgreso.style.width = Math.floor((loadedCount / assets.length) * 100) + '%';
+        if (loadedCount === assets.length) prepararYArrancar();
+      };
+      if (src.includes('entrance_anim.png')) entranceImg.src = src;
+      if (src.includes('alowi_anims.png')) animsImg.src = src;
+      if (src.includes('placeholder.png')) placeholderImg.src = src;
+    });
+
+    function prepararYArrancar() {
+      generarCintaItems();
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      let frame = entranceFrames[0];
+      let conf = animConfig['entrance'];
+      ctx.drawImage(
+        entranceImg,
+        frame.x, frame.y, frame.w, frame.h,
+        ((-frame.fx) * scale) + conf.offsetX, ((-frame.fy) * scale) + conf.offsetY, frame.w * scale, frame.h * scale
+      );
+
+      setTimeout(() => {
+        pantallaCarga.style.opacity = '0';
+        tiendaCanvas.style.opacity = '1';
+
+        setTimeout(() => {
+          pantallaCarga.style.display = 'none';
+          lastTime = performance.now();
+          requestAnimationFrame(loopAnimacion);
+        }, 300);
+      }, 100);
+    }
+
+    /* ==========================================================================
+       CINTA DE ITEMS
+       ========================================================================== */
+    let placeholderContexts = [];
+
+    function generarCintaItems() {
+      const track = document.getElementById('cinta-track');
+      track.innerHTML = '';
+      placeholderContexts = [];
+
+      itemsTienda.forEach((item, idx) => {
+        const card = document.createElement('div');
+        card.className = `item-card ${idx === 0 ? 'activo' : ''}`;
+        card.id = `item-card-${idx}`;
+
+        const cvs = document.createElement('canvas');
+        cvs.className = 'item-canvas-sprite';
+        cvs.width = 515;
+        cvs.height = 484;
+
+        const tag = document.createElement('div');
+        tag.className = 'item-info-tag';
+        tag.innerText = `${item.nombre} - ${item.precio}`;
+
+        card.appendChild(cvs);
+        card.appendChild(tag);
+        track.appendChild(card);
+
+        placeholderContexts.push(cvs.getContext('2d'));
+      });
+    }
+
+    function actualizarPosicionCinta() {
+      const track = document.getElementById('cinta-track');
+      const offsetStep = 420;
+      track.style.transform = `translateY(-${itemIndexActual * offsetStep}px)`;
+
+      itemsTienda.forEach((_, idx) => {
+        const card = document.getElementById(`item-card-${idx}`);
+        if (idx === itemIndexActual) {
+          card.classList.add('activo');
+        } else {
+          card.classList.remove('activo');
+        }
+      });
+    }
+
+    /* ==========================================================================
+       BUCLE DE RENDERIZADO
+       ========================================================================== */
+    function loopAnimacion(now) {
+      const elapsed = now - lastTime;
+
+      if (elapsed >= interval) {
+        lastTime = now - (elapsed % interval);
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        if (estadoFase === 'ENTRADA') {
+          let frame = entranceFrames[currentFrameIndex];
+          let conf = animConfig['entrance'];
+          ctx.drawImage(
+            entranceImg,
+            frame.x, frame.y, frame.w, frame.h,
+            ((-frame.fx) * scale) + conf.offsetX, ((-frame.fy) * scale) + conf.offsetY, frame.w * scale, frame.h * scale
+          );
+
+          if (currentFrameIndex < entranceFrames.length - 1) {
+            currentFrameIndex++;
+          } else {
+            estadoFase = 'DIALOGO';
+            currentFrameIndex = 0;
+            reproducirPasoDialogo(0);
+          }
+        } 
+        else {
+          let frames = animacionesMap[animActualKey] || animacionesMap['idle'];
+          let conf = animConfig[animActualKey] || { offsetX: 60, offsetY: 0 };
+
+          if (estadoFase === 'DIALOGO' || estadoFase === 'DESCRIPCION_ITEM' || estadoFase === 'EXITO_COMPRA') {
+            if (estaEscribiendo) {
+              currentFrameIndex = (currentFrameIndex + 1) % frames.length;
+            } else {
+              if (currentFrameIndex >= frames.length) {
+                currentFrameIndex = frames.length - 1;
+              }
+            }
+          } else {
+            frames = animacionesMap['idle'];
+            conf = animConfig['idle'];
+            
+            idleTimer++;
+            if (idleTimer >= 2) {
+              currentFrameIndex = (currentFrameIndex + 1) % frames.length;
+              idleTimer = 0;
+            }
+          }
+
+          let frame = frames[currentFrameIndex];
+          ctx.drawImage(
+            animsImg,
+            frame.x, frame.y, frame.w, frame.h,
+            ((-frame.fx) * scale) + conf.offsetX, ((-frame.fy) * scale) + conf.offsetY, frame.w * scale, frame.h * scale
+          );
+
+          if (estadoFase === 'CINTA_ITEMS' || estadoFase === 'DESCRIPCION_ITEM' || estadoFase === 'CONFIRMAR_COMPRA') {
+            renderizarSaacsLayer();
+
+            placeholderFrameIndex = (placeholderFrameIndex + 1) % placeholderFrames.length;
+            let pFrame = placeholderFrames[placeholderFrameIndex];
+
+            placeholderContexts.forEach((pCtx) => {
+              pCtx.clearRect(0, 0, 515, 484);
+              pCtx.drawImage(
+                placeholderImg,
+                pFrame.x, pFrame.y, pFrame.w, pFrame.h,
+                0, 0, 515, 484
+              );
+            });
+          }
+        }
+      }
+
+      requestAnimationFrame(loopAnimacion);
+    }
+
+    /* ==========================================================================
+       DIÁLOGOS
+       ========================================================================== */
+    function reproducirPasoDialogo(index) {
+      if (index >= dialogosSecuencia.length) {
+        document.getElementById('deltarune-box').style.display = 'none';
+        reproductorMusica.volume = 0.5;
+        reproductorMusica.play().catch(() => {});
+
+        estadoFase = 'MENU_TIENDA';
+        animActualKey = 'idle';
+        currentFrameIndex = 0;
+
+        const menu = document.getElementById('menu-tienda');
+        menu.classList.add('visible');
+        return;
+      }
+
+      const paso = dialogosSecuencia[index];
+      mostrarTextoEnCaja(paso.texto, paso.anim, () => {});
+    }
+
+    function mostrarTextoEnCaja(texto, animClave, callbackAlTerminar) {
+      const box = document.getElementById('deltarune-box');
+      const txt = document.getElementById('deltarune-texto');
+      const audio = document.getElementById('voz-alowi');
+
+      box.style.display = 'block';
+      txt.innerHTML = '';
+
+      animActualKey = animClave || 'anim_6';
+      currentFrameIndex = 0;
+      textoActualCompleto = texto;
+      estaEscribiendo = true;
+
+      let i = 0;
+      if (timeoutTipeo) clearTimeout(timeoutTipeo);
+
+      function tippear() {
+        if (i < textoActualCompleto.length) {
+          txt.innerHTML += textoActualCompleto.charAt(i);
+
+          if (textoActualCompleto.charAt(i) !== ' ') {
+            audio.currentTime = 0;
+            audio.play().catch(() => {});
+          }
+
+          i++;
+          timeoutTipeo = setTimeout(tippear, 45);
+        } else {
+          estaEscribiendo = false;
+          if (callbackAlTerminar) callbackAlTerminar();
+        }
+      }
+
+      tippear();
+    }
+
+    /* ==========================================================================
+       CONTROLES Y TECLADO
+       ========================================================================== */
+    function actualizarMenuVisual() {
+      const opciones = document.querySelectorAll('.menu-opcion');
+      opciones.forEach((op, idx) => {
+        if (idx === opcionSeleccionadaIndex) {
+          op.classList.add('seleccionado');
+        } else {
+          op.classList.remove('seleccionado');
+        }
+      });
+    }
+
+    function actualizarConfirmarVisual() {
+      const si = document.getElementById('conf-si');
+      const no = document.getElementById('conf-no');
+      if (confOpcionIndex === 0) {
+        si.classList.add('seleccionado');
+        no.classList.remove('seleccionado');
+      } else {
+        no.classList.add('seleccionado');
+        si.classList.remove('seleccionado');
+      }
+    }
+
+    window.addEventListener('keydown', (e) => {
+      if (estadoFase === 'DIALOGO') {
+        if (e.code === 'Space' || e.code === 'Enter') {
+          e.preventDefault();
+          if (estaEscribiendo) {
+            clearTimeout(timeoutTipeo);
+            document.getElementById('deltarune-texto').innerHTML = textoActualCompleto;
+            estaEscribiendo = false;
+          } else {
+            indiceDialogo++;
+            reproducirPasoDialogo(indiceDialogo);
+          }
+        }
+      } 
+      else if (estadoFase === 'MENU_TIENDA') {
+        if (e.code === 'ArrowUp' || e.code === 'KeyW') {
+          opcionSeleccionadaIndex = (opcionSeleccionadaIndex - 1 + 3) % 3;
+          actualizarMenuVisual();
+          reproducirSFX(sfxMove);
+        } else if (e.code === 'ArrowDown' || e.code === 'KeyS') {
+          opcionSeleccionadaIndex = (opcionSeleccionadaIndex + 1) % 3;
+          actualizarMenuVisual();
+          reproducirSFX(sfxMove);
+        } else if (e.code === 'Space' || e.code === 'Enter') {
+          e.preventDefault();
+          reproducirSFX(sfxSelect);
+          ejecutarAccionMenu(opcionSeleccionadaIndex);
+        }
+      }
+      else if (estadoFase === 'CINTA_ITEMS') {
+        if (e.code === 'ArrowUp' || e.code === 'KeyW') {
+          if (itemIndexActual > 0) {
+            itemIndexActual--;
+            actualizarPosicionCinta();
+            reproducirSFX(sfxMove);
+          }
+        } else if (e.code === 'ArrowDown' || e.code === 'KeyS') {
+          if (itemIndexActual < itemsTienda.length - 1) {
+            itemIndexActual++;
+            actualizarPosicionCinta();
+            reproducirSFX(sfxMove);
+          }
+        } else if (e.code === 'Space' || e.code === 'Enter') {
+          e.preventDefault();
+          reproducirSFX(sfxSelect);
+          iniciarDescripcionItem();
+        } else if (e.code === 'KeyX') {
+          e.preventDefault();
+          reproducirSFX(sfxUndoSelect);
+          regresarAlMenuPrincipal();
+        }
+      }
+      else if (estadoFase === 'DESCRIPCION_ITEM') {
+        if (e.code === 'Space' || e.code === 'Enter') {
+          e.preventDefault();
+          if (estaEscribiendo) {
+            clearTimeout(timeoutTipeo);
+            document.getElementById('deltarune-texto').innerHTML = textoActualCompleto;
+            estaEscribiendo = false;
+            desplegarConfirmarCompra();
+          } else {
+            reproducirSFX(sfxSelect);
+            desplegarConfirmarCompra();
+          }
+        }
+      }
+      else if (estadoFase === 'CONFIRMAR_COMPRA') {
+        if (e.code === 'ArrowLeft' || e.code === 'KeyA' || e.code === 'ArrowRight' || e.code === 'KeyD') {
+          confOpcionIndex = confOpcionIndex === 0 ? 1 : 0;
+          actualizarConfirmarVisual();
+          reproducirSFX(sfxMove);
+        } else if (e.code === 'Space' || e.code === 'Enter') {
+          e.preventDefault();
+          if (confOpcionIndex === 0) {
+            reproducirSFX(sfxBuyComplete);
+            procesarCompraExitosa();
+          } else {
+            reproducirSFX(sfxUndoSelect);
+            cancelarCompra();
+          }
+        } else if (e.code === 'KeyX') {
+          e.preventDefault();
+          reproducirSFX(sfxUndoSelect);
+          cancelarCompra();
+        }
+      }
+      else if (estadoFase === 'EXITO_COMPRA') {
+        if (e.code === 'Space' || e.code === 'Enter') {
+          e.preventDefault();
+          if (estaEscribiendo) {
+            clearTimeout(timeoutTipeo);
+            document.getElementById('deltarune-texto').innerHTML = textoActualCompleto;
+            estaEscribiendo = false;
+          } else {
+            reproducirSFX(sfxSelect);
+            document.getElementById('deltarune-box').style.display = 'none';
+            estadoFase = 'CINTA_ITEMS';
+            animActualKey = 'idle';
+          }
+        }
+      }
+    });
+
+    /* ==========================================================================
+       TRANSICIONES Y ACCIONES
+       ========================================================================== */
+    function ejecutarAccionMenu(index) {
+      const menu = document.getElementById('menu-tienda');
+      const compraContainer = document.getElementById('tienda-compra-container');
+      const cintaBox = document.getElementById('cinta-box');
+
+      if (index === 0) {
+        menu.classList.remove('visible');
+
+        estadoFase = 'CINTA_ITEMS';
+        animActualKey = 'idle';
+
+        compraContainer.classList.add('activo');
+
+        setTimeout(() => {
+          cintaBox.classList.remove('salir-abajo');
+          cintaBox.classList.add('visible');
+        }, 300);
+
+      } else if (index === 1) {
+        alert("Acción de hablar seleccionada.");
+      } else if (index === 2) {
+        alert("Saliendo de la tienda...");
+      }
+    }
+
+    function iniciarDescripcionItem() {
+      const curItem = itemsTienda[itemIndexActual];
+      estadoFase = 'DESCRIPCION_ITEM';
+
+      mostrarTextoEnCaja(curItem.descripcion, curItem.animDescripcion, () => {
+        desplegarConfirmarCompra();
+      });
+    }
+
+    function desplegarConfirmarCompra() {
+      estadoFase = 'CONFIRMAR_COMPRA';
+      confOpcionIndex = 0;
+      actualizarConfirmarVisual();
+
+      document.getElementById('confirmar-box').classList.add('activo');
+    }
+
+    function procesarCompraExitosa() {
+      document.getElementById('confirmar-box').classList.remove('activo');
+      const curItem = itemsTienda[itemIndexActual];
+      estadoFase = 'EXITO_COMPRA';
+
+      mostrarTextoEnCaja(curItem.dialogoExito, curItem.animExito, () => {});
+    }
+
+    function cancelarCompra() {
+      document.getElementById('confirmar-box').classList.remove('activo');
+      document.getElementById('deltarune-box').style.display = 'none';
+
+      estadoFase = 'CINTA_ITEMS';
+      animActualKey = 'idle';
+    }
+
+    function regresarAlMenuPrincipal() {
+      const menu = document.getElementById('menu-tienda');
+      const compraContainer = document.getElementById('tienda-compra-container');
+      const cintaBox = document.getElementById('cinta-box');
+
+      cintaBox.classList.remove('visible');
+      cintaBox.classList.add('salir-abajo');
+      compraContainer.classList.remove('activo');
+
+      setTimeout(() => {
+        estadoFase = 'MENU_TIENDA';
+        animActualKey = 'idle';
+        menu.classList.add('visible');
+      }, 500);
+    }
+  </script>
+
+</body>
+</html>
